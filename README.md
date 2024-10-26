@@ -37,3 +37,4 @@ Code has also been taken from the [slog package], which is licensed under the BS
 
 [labelsMapToString function]: https://github.com/grafana/loki/blob/main/clients/pkg/promtail/client/batch.go#L76
 [slog package]: https://pkg.go.dev/log/slog
+[LICENSE-go]: ./LICENSE-go
