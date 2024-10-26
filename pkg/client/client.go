@@ -1,3 +1,4 @@
+// Package client provides a client for pushing logs to a Loki instance.
 package client
 
 import (
@@ -16,20 +17,36 @@ import (
 )
 
 const (
+	// contentTypeProtobuf is the value of the Content-Type header for protobuf requests. It represents data
+	// serialized as a protobuf and compressed using Snappy.
 	contentTypeProtobuf = "application/x-protobuf"
-	userAgent           = "loki-logger/0.0"
+	// userAgent is the value of the User-Agent header for requests to Loki. It is specific to this library.
+	userAgent = "loki-logger/0.0"
 )
 
+// Labeler is an interface that abstracts the conversion of labels to a string for sending to Loki. For now, it is best
+// to use the [LabelMap] type, which implements this interface.
 type Labeler interface {
+	// Label returns a single string that represents all the labels to add to the stream.
+	//
+	// # Format
+	//
+	// The labels follow the format `{key="value", key2="value2"}`. The values should be properly escaped as Go
+	// strings, such as by [strconv.Quote]. The keys should also be sorted alphabetically.
 	Label() string
 }
 
+// LabelMap is a map of labels that can be converted to a string for sending to Loki. It implements the [Labeler]
+// interface.
 type LabelMap map[string]string
 
+// Label returns the string representation of the LabelMap.
 func (lm LabelMap) Label() string {
 	return labelsToString(lm)
 }
 
+// Entry is a struct that represents a single log entry to be sent to Loki. It contains the timestamp, labels, line, and
+// structured metadata. It does not have any knowledge of streams.
 type Entry struct {
 	Timestamp          time.Time
 	Labels             Labeler
@@ -37,6 +54,8 @@ type Entry struct {
 	StructuredMetadata map[string]string
 }
 
+// AsPushRequest converts the Entry to a [push.PushRequest] that can be marshaled, compressed, and sent to Loki. This
+// method does not modify the Entry.
 func (entry *Entry) AsPushRequest() push.PushRequest {
 	return push.PushRequest{
 		Streams: []push.Stream{
@@ -52,6 +71,8 @@ func (entry *Entry) AsPushRequest() push.PushRequest {
 	}
 }
 
+// Encode converts the Entry to a byte slice that can be sent to Loki. It first serializes the Entry to a protobuf and
+// then encodes it using Snappy compression. This method does not modify the Entry.
 func (entry *Entry) Encode() ([]byte, error) {
 	pushRequest := entry.AsPushRequest()
 
@@ -65,23 +86,30 @@ func (entry *Entry) Encode() ([]byte, error) {
 	return buf, nil
 }
 
+// Client is an interface that abstracts the sending of log entries to Loki. Each call to Push represents a single log
+// entry being sent to Loki.
+//
+// Implementations of this interface should be safe to use concurrently.
 type Client interface {
 	Push(entry Entry) error
 }
 
-type lokiClient struct {
+// LokiClient is a client for pushing log entries to a Loki instance. It implements the [Client] interface.
+type LokiClient struct {
 	url    string
 	client *http.Client
 }
 
-func NewLokiClient(url string) *lokiClient {
-	return &lokiClient{
+// NewLokiClient creates a new LokiClient with the given URL.
+func NewLokiClient(url string) *LokiClient {
+	return &LokiClient{
 		url:    url,
 		client: &http.Client{},
 	}
 }
 
-func (client *lokiClient) Push(entry Entry) error {
+// Push implements the [Client] interface. It sends the given Entry to Loki.
+func (client *LokiClient) Push(entry Entry) error {
 	buf, err := entry.Encode()
 	if err != nil {
 		return err
@@ -113,6 +141,8 @@ func (client *lokiClient) Push(entry Entry) error {
 	return nil
 }
 
+// labelsToString converts a map of labels to a string that can be added to a stream. It follows the format required by
+// Loki and thus the [Labeler] interface. It does not modify the labels map.
 func labelsToString(labels map[string]string) string {
 	// This code is based heavily on the labelsMapToString function in the Promtail client, which is licensed under
 	// the Apache 2.0 license.
@@ -145,6 +175,8 @@ func labelsToString(labels map[string]string) string {
 	return builder.String()
 }
 
+// metadataToLabelsAdapter converts the map of structured metadata to a slice of [push.LabelAdapter] that can be added
+// to a stream. It does not modify the metadata map.
 func metadataToLabelsAdapter(metadata map[string]string) push.LabelsAdapter {
 	labels := make([]push.LabelAdapter, 0, len(metadata))
 
