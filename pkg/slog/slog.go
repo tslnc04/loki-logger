@@ -1,11 +1,3 @@
-// Package slog implements a [slog.Handler] that sends logs to a Loki instance.
-//
-// The slog handler can be created directly using [NewHandler] or a [slog.Logger] can be created using [NewLogger].
-// These functions take a [client.Client] and a [slog.HandlerOptions] as arguments. Note that the [slog.HandlerOptions]
-// are used differently than in the slog package. See the documentation of [Handler] for more information.
-//
-// An important distinction when logging is that this Handler treats any attributes or groups added to the logger itself
-// as labels for the stream in Loki. Attributes or groups included in the Record are treated as structured metadata.
 package slog
 
 import (
