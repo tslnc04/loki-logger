@@ -16,6 +16,9 @@ import (
 	"github.com/grafana/loki/pkg/push"
 )
 
+// PushPath is the path to the Loki push endpoint.
+const PushPath = "/loki/api/v1/push"
+
 const (
 	// contentTypeProtobuf is the value of the Content-Type header for protobuf requests. It represents data
 	// serialized as a protobuf and compressed using Snappy.
