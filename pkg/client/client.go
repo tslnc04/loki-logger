@@ -36,7 +36,7 @@ type Labeler interface {
 	//
 	// The labels follow the format `{key="value", key2="value2"}`. The values should be properly escaped as Go
 	// strings, such as by [strconv.Quote]. The keys should also be sorted alphabetically.
-	Label() string
+	Label() LabelString
 }
 
 // LabelMap is a map of labels that can be converted to a string for sending to Loki. It implements the [Labeler]
@@ -44,8 +44,16 @@ type Labeler interface {
 type LabelMap map[string]string
 
 // Label returns the string representation of the LabelMap.
-func (lm LabelMap) Label() string {
-	return labelsToString(lm)
+func (lm LabelMap) Label() LabelString {
+	return LabelString(labelsToString(lm))
+}
+
+// LabelString is a string that contains labels already formatted as a string. It implements the [Labeler] interface.
+type LabelString string
+
+// Label returns the string representation of the LabelsString. It is effectively a no-op.
+func (ls LabelString) Label() LabelString {
+	return ls
 }
 
 // Entry is a struct that represents a single log entry to be sent to Loki. It contains the timestamp, labels, line, and
@@ -63,7 +71,7 @@ func (entry *Entry) AsPushRequest() push.PushRequest {
 	return push.PushRequest{
 		Streams: []push.Stream{
 			{
-				Labels: entry.Labels.Label(),
+				Labels: string(entry.Labels.Label()),
 				Entries: []push.Entry{{
 					Timestamp:          entry.Timestamp,
 					Line:               entry.Line,
