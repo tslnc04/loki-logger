@@ -56,7 +56,7 @@ func TestLogging(t *testing.T) {
 			prefix: "",
 			expected: []client.Entry{{
 				Labels: client.LabelMap(map[string]string{}).Label(),
-				Line:   "log_test.go:84: " + defaultMessage,
+				Line:   "log_test.go:82: " + defaultMessage,
 			}},
 		},
 		{
