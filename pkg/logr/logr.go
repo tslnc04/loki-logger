@@ -175,10 +175,8 @@ func (sink *LokiSink) createEntry(level int, msg string, keysAndValues []any) cl
 	labels := maps.Clone(sink.labels)
 	labels[LevelKey] = strconv.Itoa(level)
 
-	var metadata map[string]string
-
+	metadata := make(map[string]string)
 	if len(keysAndValues) > 1 {
-		metadata = make(map[string]string)
 		addValuesToLabels(metadata, keysAndValues)
 	}
 
@@ -188,7 +186,7 @@ func (sink *LokiSink) createEntry(level int, msg string, keysAndValues []any) cl
 	}
 
 	// account for this function being called from the actual log function
-	callDepth++
+	callDepth += 2
 
 	source := newSource(callDepth)
 	if source != nil {
@@ -197,7 +195,7 @@ func (sink *LokiSink) createEntry(level int, msg string, keysAndValues []any) cl
 
 	entry := client.Entry{
 		Timestamp:          time.Now(),
-		Labels:             client.LabelMap(sink.labels).Label(),
+		Labels:             client.LabelMap(labels).Label(),
 		Line:               msg,
 		StructuredMetadata: metadata,
 	}

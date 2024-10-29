@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -21,7 +22,9 @@ func (client *Client) AssertEntries(t *testing.T, expected []client.Entry) bool 
 	actual := client.Entries()
 	defer client.Close()
 
-	assert.Equal(t, len(expected), len(actual))
+	if !assert.Len(t, actual, len(expected)) {
+		return false
+	}
 
 	ok := true
 	for i := range expected {
@@ -46,9 +49,40 @@ func assertEntry(t *testing.T, expected client.Entry, actual client.Entry) bool 
 	//nolint:varnamelen
 	ok := true
 	ok = ok && assert.WithinDuration(t, expected.Timestamp, actual.Timestamp, time.Second)
-	ok = ok && assert.Equal(t, expected.Labels, actual.Labels)
+	ok = ok && assert.Equal(t, expected.Labels.Label(), actual.Labels.Label())
 	ok = ok && assert.Equal(t, expected.Line, actual.Line)
-	ok = ok && assert.Equal(t, expected.StructuredMetadata, actual.StructuredMetadata)
+	ok = ok && assertMetadata(t, expected.StructuredMetadata, actual.StructuredMetadata)
 
 	return ok
+}
+
+func assertMetadata(t *testing.T, expected map[string]string, actual map[string]string) bool {
+	t.Helper()
+
+	if !assert.Len(t, actual, len(expected)) {
+		return false
+	}
+
+	for key, expectedValue := range expected {
+		actualValue, ok := actual[key]
+		if !assert.Truef(t, ok, "expected key `%s` to exist", key) {
+			return false
+		}
+
+		if strings.HasPrefix(key, "source_") {
+			if !assert.Conditionf(t, func() bool {
+				return strings.HasSuffix(actualValue, expectedValue)
+			}, "expected source key `%s` with value `%s` to end with `%s`", key, actualValue, expectedValue) {
+				return false
+			}
+
+			continue
+		}
+
+		if assert.Equal(t, expectedValue, actualValue) {
+			return false
+		}
+	}
+
+	return true
 }
