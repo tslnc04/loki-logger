@@ -1,11 +1,7 @@
 # loki-logger
 
-> [!WARNING]
-> The slog package is currently in development and should not be used. The log and logr packages are more stable now.
-
 loki-logger is a simple library for sending logs to a Loki instance from Go. It currently intgrates with [log],
-[log/slog], and [logr]. Note that only the slog impelementation has been tested in any form. Additional logging packages
-may be added in the future.
+[log/slog], and [logr].
 
 [log]: https://pkg.go.dev/log
 [log/slog]: https://pkg.go.dev/log/slog

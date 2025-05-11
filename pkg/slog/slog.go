@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"maps"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
@@ -31,6 +32,8 @@ type Handler struct {
 	labels  map[string]string
 	groups  []string
 }
+
+var _ slog.Handler = (*Handler)(nil)
 
 // NewLogger creates a new slog.Logger with the Handler attached. It is equivalent to
 //
@@ -91,7 +94,7 @@ func (handler *Handler) WithGroup(name string) slog.Handler {
 	newHandler := handler.clone()
 	newHandler.groups = append(newHandler.groups, name)
 
-	return handler
+	return newHandler
 }
 
 // clone returns a copy of the Handler only sharing the client, although the client should be safe to use concurrently.
@@ -100,7 +103,7 @@ func (handler *Handler) clone() *Handler {
 		client:  handler.client,
 		options: handler.options,
 		labels:  maps.Clone(handler.labels),
-		groups:  append([]string{}, handler.groups...),
+		groups:  slices.Clone(handler.groups),
 	}
 
 	return newHandler
@@ -124,6 +127,8 @@ func (handler *Handler) recordToEntry(record slog.Record) client.Entry {
 	if handler.options.AddSource {
 		state.appendAttr(slog.Any(slog.SourceKey, newSource(&record)))
 	}
+
+	state.groups = slices.Clone(handler.groups)
 
 	record.Attrs(func(attr slog.Attr) bool {
 		state.appendAttr(attr)
