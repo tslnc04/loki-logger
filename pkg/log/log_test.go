@@ -4,8 +4,9 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/tslnc04/loki-logger/pkg/client"
-	"github.com/tslnc04/loki-logger/pkg/client/fake"
+	"github.com/tslnc04/loki-logger/pkg/internal/fake"
 )
 
 const (
@@ -21,53 +22,53 @@ func TestLogging(t *testing.T) {
 		labels   map[string]string
 		flags    int
 		prefix   string
-		expected []client.Entry
+		expected client.Entry
 	}{
 		{
-			name:   "WithoutLabels",
+			name:   "without-labels",
 			labels: nil,
 			flags:  0,
 			prefix: "",
-			expected: []client.Entry{{
+			expected: client.Entry{
 				Labels: client.LabelMap(map[string]string{}).Label(),
 				Line:   defaultMessage,
-			}},
+			},
 		},
 		{
-			name: "WithLabels",
+			name: "with-labels",
 			labels: map[string]string{
 				"key1": "value1",
 				"key2": "value2",
 			},
 			flags:  0,
 			prefix: "",
-			expected: []client.Entry{{
+			expected: client.Entry{
 				Labels: client.LabelMap(map[string]string{
 					"key1": "value1",
 					"key2": "value2",
 				}).Label(),
 				Line: defaultMessage,
-			}},
+			},
 		},
 		{
-			name:   "WithFlags",
+			name:   "with-flags",
 			labels: nil,
 			flags:  log.Lshortfile,
 			prefix: "",
-			expected: []client.Entry{{
+			expected: client.Entry{
 				Labels: client.LabelMap(map[string]string{}).Label(),
-				Line:   "log_test.go:82: " + defaultMessage,
-			}},
+				Line:   "log_test.go:88: " + defaultMessage,
+			},
 		},
 		{
-			name:   "WithPrefix",
+			name:   "with-prefix",
 			labels: nil,
 			flags:  0,
 			prefix: "prefix: ",
-			expected: []client.Entry{{
+			expected: client.Entry{
 				Labels: client.LabelMap(map[string]string{}).Label(),
 				Line:   "prefix: " + defaultMessage,
-			}},
+			},
 		},
 	}
 
@@ -75,13 +76,22 @@ func TestLogging(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			lokiClient := fake.New()
-			writer := NewLokiWriter(lokiClient, testCase.labels)
+			fakeServer := fake.NewServer(0)
+			httpServer := fakeServer.Start()
+
+			defer httpServer.Close()
+
+			lokiClient := client.NewLokiClient(httpServer.URL + client.PushPath)
+			writer := NewLokiWriter(lokiClient, nil).WithLabels(testCase.labels)
 			logger := New(testCase.prefix, testCase.flags, writer)
 
 			logger.Print(defaultMessage)
 
-			lokiClient.AssertEntries(t, testCase.expected)
+			streams := fakeServer.Streams()
+			defer fakeServer.Close()
+
+			require.Len(t, streams, 1, "Expected one push stream to be sent to the server")
+			client.AssertStreamMatchesEntry(t, testCase.expected, streams[0])
 		})
 	}
 }

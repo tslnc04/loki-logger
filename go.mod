@@ -1,12 +1,12 @@
 module github.com/tslnc04/loki-logger
 
-go 1.23.2
+go 1.24.3
 
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/snappy v0.0.4
 	github.com/grafana/loki/pkg/push v0.0.0-20231124142027-e52380921608
+	github.com/klauspost/compress v1.18.0
 	github.com/stretchr/testify v1.9.0
 )
 

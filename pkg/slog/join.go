@@ -14,6 +14,9 @@ type JoinedHandler struct {
 	concurrent bool
 }
 
+// Assert that JoinedHandler implements the [slog.Handler] interface.
+var _ slog.Handler = (*JoinedHandler)(nil)
+
 // NewJoinedHandler creates a new JoinedHandler with the given handlers.
 func NewJoinedHandler(handlers ...slog.Handler) *JoinedHandler {
 	return &JoinedHandler{
@@ -114,7 +117,6 @@ func (handler *JoinedHandler) WithGroup(name string) slog.Handler {
 }
 
 func (handler *JoinedHandler) handleConcurrent(ctx context.Context, record slog.Record) error {
-	//nolint:varnamelen
 	var wg sync.WaitGroup
 
 	wg.Add(len(handler.handlers))

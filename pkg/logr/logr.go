@@ -2,6 +2,7 @@
 package logr
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"runtime"
@@ -53,6 +54,9 @@ type LokiSink struct {
 	// labels is a map of labels to add to each log entry. It should never be nil.
 	labels map[string]string
 }
+
+// Assert that LokiSink implements the [logr.LogSink] interface.
+var _ logr.LogSink = (*LokiSink)(nil)
 
 // NewLokiSink creates a new LokiSink with the given client. Optionally, it can be configured with the given level. If
 // multiple levels are provided, the sink will log only messages less than or equal to the first level provided. It is
@@ -107,7 +111,7 @@ func (sink *LokiSink) Enabled(level int) bool {
 // structured metadata. It is safe to call concurrently from multiple goroutines.
 func (sink *LokiSink) Info(level int, msg string, keysAndValues ...any) {
 	entry := sink.createEntry(level, msg, keysAndValues)
-	_ = sink.lokiClient.Push(entry)
+	_ = sink.lokiClient.Push(context.Background(), entry)
 }
 
 // Error logs the message with the provided error and level. It adds the level set to -1 to the stream labels and the
@@ -115,7 +119,7 @@ func (sink *LokiSink) Info(level int, msg string, keysAndValues ...any) {
 func (sink *LokiSink) Error(err error, msg string, keysAndValues ...any) {
 	keysAndValues = append(keysAndValues, ErrorKey, err)
 	entry := sink.createEntry(-1, msg, keysAndValues)
-	_ = sink.lokiClient.Push(entry)
+	_ = sink.lokiClient.Push(context.Background(), entry)
 }
 
 // WithValues returns a new LokiSink with the given keys and values added to the stream labels. If there are an odd

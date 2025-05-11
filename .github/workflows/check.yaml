@@ -41,5 +41,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Test
-        run: go test -v -timeout 30s ./...
+      - name: Test with coverage
+        run: go test -v -timeout 30s ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+
+      - name: Check test coverage
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: .testcoverage.yaml

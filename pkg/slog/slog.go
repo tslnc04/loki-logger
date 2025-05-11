@@ -64,10 +64,10 @@ func (handler *Handler) Enabled(_ context.Context, level slog.Level) bool {
 
 // Handle converts the given Record to a format compatible with Loki and pushes it to the Loki instance via the provided
 // client.
-func (handler *Handler) Handle(_ context.Context, record slog.Record) error {
+func (handler *Handler) Handle(ctx context.Context, record slog.Record) error {
 	entry := handler.recordToEntry(record)
 
-	return handler.client.Push(entry)
+	return handler.client.Push(ctx, entry)
 }
 
 // WithAttrs returns a new Handler with the given attributes appended to the existing ones. These appear as stream

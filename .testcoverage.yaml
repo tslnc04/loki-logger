@@ -1,0 +1,8 @@
+profile: cover.out
+
+threshold:
+  global: 80
+
+exclude:
+  paths:
+    - ^pkg/internal/fake

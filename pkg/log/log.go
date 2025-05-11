@@ -7,6 +7,7 @@
 package log
 
 import (
+	"context"
 	"io"
 	"log"
 	"maps"
@@ -32,6 +33,9 @@ type LokiWriter struct {
 	preformattedLabels client.LabelString
 }
 
+// Assert that LokiWriter implements the io.Writer interface.
+var _ io.Writer = (*LokiWriter)(nil)
+
 // NewLokiWriter creates a new LokiWriter with the given client and labels. Labels may be nil.
 func NewLokiWriter(lokiClient client.Client, labels map[string]string) *LokiWriter {
 	if labels == nil {
@@ -51,9 +55,9 @@ func (writer *LokiWriter) WithLabels(labels map[string]string) *LokiWriter {
 	newWriter := writer.Clone()
 
 	maps.Copy(newWriter.labels, labels)
-	newWriter.preformattedLabels = client.LabelMap(labels).Label()
+	newWriter.preformattedLabels = newWriter.labels.Label()
 
-	return writer
+	return newWriter
 }
 
 // Clone returns a copy of the LokiWriter, sharing only the Loki client. It is safe to call concurrently from multiple
@@ -91,7 +95,7 @@ func (writer *LokiWriter) Write(message []byte) (int, error) {
 		StructuredMetadata: nil,
 	}
 
-	err := writer.lokiClient.Push(entry)
+	err := writer.lokiClient.Push(context.Background(), entry)
 	if err != nil {
 		return 0, err
 	}
