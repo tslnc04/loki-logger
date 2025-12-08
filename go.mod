@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/gogo/protobuf v1.3.2
 	github.com/grafana/loki/pkg/push v0.0.0-20231124142027-e52380921608
-	github.com/klauspost/compress v1.18.1
+	github.com/klauspost/compress v1.18.2
 	github.com/stretchr/testify v1.11.1
 )
 
